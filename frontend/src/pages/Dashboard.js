@@ -1,9 +1,15 @@
+// 📊 DASHBOARD PAGE - Uses Zustand for user authentication
+// Shows different content based on user role (farmer vs customer)
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
+// ✅ Import Zustand hooks from store
+import { useAuthUser } from '../store/authStore';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  // 🎯 ZUSTAND SELECTOR - Get only user data (optimized re-renders)
+  const user = useAuthUser();
+  console.log('📊 Dashboard: Current user:', user);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);

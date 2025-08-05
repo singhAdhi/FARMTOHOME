@@ -1,16 +1,25 @@
+// 🧭 NAVBAR - Simple Zustand usage (like RTK)
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Link, useNavigate } from 'react-router';
+import { useAuthUser, useAuthStatus, useAuthActions } from '../store/authStore';
 
 const Navbar = () => {
-  const { isAuthenticated, logout, user } = useAuth();
   const navigate = useNavigate();
+  
+  // 🎯 GET DATA FROM STORE (like useSelector in RTK)
+  const user = useAuthUser();
+  const { isAuthenticated } = useAuthStatus();
+  
+  // 🎮 GET ACTIONS FROM STORE (like dispatch in RTK)
+  const { logout } = useAuthActions();
 
-  const onLogout = () => {
+  // 🚪 LOGOUT HANDLER
+  const handleLogout = () => {
     logout();
     navigate('/');
   };
 
+  // ✅ AUTHENTICATED USER MENU
   const authLinks = (
     <>
       <li>
@@ -24,16 +33,24 @@ const Navbar = () => {
         </Link>
       </li>
       <li>
-        <span className="nav-link">Hello, {user && user.name}</span>
+        <span className="nav-link">
+          Hello, {user?.name}
+          {user?.role && <small> ({user.role})</small>}
+        </span>
       </li>
       <li>
-        <button onClick={onLogout} className="nav-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+        <button 
+          onClick={handleLogout} 
+          className="nav-link" 
+          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+        >
           Logout
         </button>
       </li>
     </>
   );
 
+  // ❌ NON-AUTHENTICATED USER MENU
   const guestLinks = (
     <>
       <li>
@@ -61,6 +78,7 @@ const Navbar = () => {
           <Link to="/" className="navbar-brand">
             🌱 Farm to Home
           </Link>
+          
           <ul className="navbar-nav">
             {isAuthenticated ? authLinks : guestLinks}
           </ul>

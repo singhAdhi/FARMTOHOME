@@ -1,77 +1,41 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { check, validationResult } = require('express-validator');
-const User = require('../models/User');
-const auth = require('../middleware/auth');
+import express from 'express';
+import {
+  register,
+  login,
+  getProfile,
+  updateProfile
+} from '../controllers/authController.js';
+
+import auth from '../middleware/auth.js';
+
+import {validateZod} from '../middleware/validateZod.js';
+// Import validation schemas
+import {
+  registerSchema,
+  loginSchema,
+  updateProfileSchema
+} from '../validations/authValidation.js';  
 
 const router = express.Router();
 
-// @route   GET api/auth
-// @desc    Get user by token
-// @access  Private
-router.get('/', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select('-password');
-    res.json(user);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
-
-// @route   POST api/auth
-// @desc    Authenticate user & get token (Login)
+// @route   POST /api/auth/register
+// @desc    Register new user
 // @access  Public
-router.post(
-  '/',
-  [
-    check('email', 'Please include a valid email').isEmail(),
-    check('password', 'Password is required').exists(),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+router.post('/register', validateZod(registerSchema), register);
 
-    const { email, password } = req.body;
+// @route   POST /api/auth/login
+// @desc    Login user
+// @access  Public
+router.post('/login', validateZod(loginSchema), login);
 
-    try {
-      // Check if user exists
-      let user = await User.findOne({ email });
-      if (!user) {
-        return res.status(400).json({ msg: 'Invalid credentials' });
-      }
+// @route   GET /api/auth/profile
+// @desc    Get current user profile
+// @access  Private
+router.get('/profile', auth, getProfile);
 
-      // Check password
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ msg: 'Invalid credentials' });
-      }
+// @route   PUT /api/auth/profile
+// @desc    Update user profile
+// @access  Private
+router.put('/profile', auth, validateZod(updateProfileSchema), updateProfile);
 
-      // Return jsonwebtoken
-      const payload = {
-        user: {
-          id: user.id,
-          role: user.role
-        },
-      };
-
-      jwt.sign(
-        payload,
-        process.env.JWT_SECRET,
-        { expiresIn: '5 days' },
-        (err, token) => {
-          if (err) throw err;
-          res.json({ token });
-        }
-      );
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server error');
-    }
-  }
-);
-
-module.exports = router; 
+export default router; 

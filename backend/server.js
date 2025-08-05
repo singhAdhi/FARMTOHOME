@@ -1,8 +1,11 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const path = require('path');
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import path from 'path';
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/users.js';
+import productRoutes from './routes/products.js';
 
 // Load environment variables
 dotenv.config();
@@ -14,9 +17,9 @@ app.use(cors());
 app.use(express.json({ extended: false }));
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/products', require('./routes/products'));
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/products', productRoutes);
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
@@ -42,4 +45,4 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/farmtohom
 .catch(err => {
   console.error('MongoDB connection error:', err);
   process.exit(1);
-}); 
+});

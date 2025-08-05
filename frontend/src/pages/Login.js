@@ -1,6 +1,7 @@
+// 🔑 LOGIN PAGE - Simple Zustand usage (like RTK)
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuthStatus, useAuthActions } from '../store/authStore';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -8,41 +9,48 @@ const Login = () => {
     password: ''
   });
   const [alert, setAlert] = useState(null);
-
   const { email, password } = formData;
-  const { login, error, clearErrors, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
+  // 🎯 GET DATA FROM STORE (like useSelector in RTK)
+  const { isAuthenticated, loading, error } = useAuthStatus();
+  
+  // 🎮 GET ACTIONS FROM STORE (like dispatch in RTK)
+  const { login, clearError } = useAuthActions();
+
+  // 🔄 HANDLE SUCCESS/ERROR
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate('/dashboard'); // Redirect on success
     }
-
     if (error) {
       setAlert({ type: 'danger', message: error });
-      clearErrors();
+      clearError();
     }
-  }, [error, isAuthenticated, navigate, clearErrors]);
+  }, [isAuthenticated, error, navigate, clearError]);
 
-  const onChange = (e) =>
+  // 📝 FORM HANDLERS
+  const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (alert) setAlert(null);
+  };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    if (email === '' || password === '') {
+    
+    if (!email || !password) {
       setAlert({ type: 'danger', message: 'Please fill in all fields' });
-    } else {
-      login({
-        email,
-        password
-      });
+      return;
     }
+
+    // 🚀 CALL ACTION (like dispatch in RTK, but simpler!)
+    await login({ email, password });
   };
 
   return (
     <div className="auth-container">
       <form onSubmit={onSubmit} className="auth-form">
-        <h2 className="auth-title">Login</h2>
+        <h2 className="auth-title">🔑 Login to Farm to Home</h2>
         
         {alert && (
           <div className={`alert alert-${alert.type}`}>
@@ -61,6 +69,7 @@ const Login = () => {
             required
             className="form-input"
             placeholder="Enter your email"
+            disabled={loading}
           />
         </div>
 
@@ -75,11 +84,17 @@ const Login = () => {
             required
             className="form-input"
             placeholder="Enter your password"
+            disabled={loading}
           />
         </div>
 
-        <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-          Login
+        <button 
+          type="submit" 
+          className="btn btn-primary" 
+          style={{ width: '100%' }}
+          disabled={loading}
+        >
+          {loading ? '🔄 Logging in...' : '🔑 Login'}
         </button>
 
         <div className="auth-link">
