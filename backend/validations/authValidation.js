@@ -22,8 +22,8 @@ const registerSchema = z.object({
         'Password must contain at least one uppercase letter, one lowercase letter, and one number'),
     
     role: z
-      .enum(['customer', 'farmer'], {
-        errorMap: () => ({ message: 'Role must be either customer or farmer' })
+      .enum(['customer', 'farmer','admin'], {
+        errorMap: () => ({ message: 'Role must be either customer or farmer OR admin' })
       })
       .default('customer'),
     

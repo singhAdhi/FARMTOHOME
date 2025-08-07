@@ -273,6 +273,18 @@ const returnOrderSchema = z.object({
   }
 );
 
+export {
+  placeOrderSchema,
+  updateOrderStatusSchema,
+  cancelOrderSchema,
+  getOrdersQuerySchema,
+  getOrderByIdSchema,
+  returnOrderSchema,
+  deliveryAddressSchema,
+  ORDER_STATUSES,
+  PAYMENT_METHODS
+};
+
 export default {
   placeOrderSchema,
   updateOrderStatusSchema,

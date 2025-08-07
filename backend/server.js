@@ -6,6 +6,8 @@ import path from 'path';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import productRoutes from './routes/products.js';
+import farmerRoutes from './routes/farmers.js';
+import customerRoutes from './routes/customers.js';
 
 // Load environment variables
 dotenv.config();
@@ -16,10 +18,19 @@ const app = express();
 app.use(cors());
 app.use(express.json({ extended: false }));
 
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log('Headers:', req.headers);
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/farmers', farmerRoutes);
+app.use('/api/customers', customerRoutes);
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {

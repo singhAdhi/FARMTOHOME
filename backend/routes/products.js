@@ -1,11 +1,6 @@
 import express from 'express';
-import {
-  getProducts,
-  getProduct,
-  searchProducts,
-  getProductsByFarmer,
-  getCategories
-} from '../controllers/productController.js';
+import productController from '../controllers/productController.js';
+const { getProducts, getProduct, searchProducts, getProductsByFarmer, getCategories } = productController;
 
 import { validateZod } from '../middleware/validateZod.js';
 

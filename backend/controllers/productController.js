@@ -264,7 +264,7 @@ const getCategories = async (req, res) => {
   }
 };
 
-export {
+export default {
   getProducts,
   getProduct,
   searchProducts,

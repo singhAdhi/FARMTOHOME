@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
+
 // @desc    Register new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -9,6 +10,18 @@ const register = async (req, res) => {
   try {
     // Data is already validated by Zod middleware
     const { name, email, password, role } = req.body;
+
+    // Check if JWT_SECRET is configured
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not configured in environment variables');
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'SERVER_MISCONFIGURATION',
+          message: 'Server configuration error'
+        }
+      });
+    }
 
     // Check if user already exists
     let user = await User.findOne({ email });
@@ -34,10 +47,7 @@ const register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
 
-    // Save user
-    await user.save();
-
-    // Create JWT token
+    // Create JWT token payload
     const payload = {
       user: {
         id: user.id,
@@ -45,26 +55,38 @@ const register = async (req, res) => {
       }
     };
 
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '5 days' },
-      (err, token) => {
-        if (err) throw err;
-        res.status(201).json({
-          success: true,
-          data: {
-            token,
-            user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role
-            } 
+    // Generate JWT token first, before saving user
+    const token = await new Promise((resolve, reject) => {
+      jwt.sign(
+        payload,
+        process.env.JWT_SECRET,
+        { expiresIn: '5 days' },
+        (err, token) => {
+          if (err) {
+            console.error('JWT generation error:', err);
+            reject(err);
+          } else {
+            resolve(token);
           }
-        });
+        }
+      );
+    });
+
+    // Only save user after JWT token is successfully generated
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      data: {
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        } 
       }
-    );
+    });
 
   } catch (error) {
     console.error('Register error:', error);
@@ -85,6 +107,18 @@ const login = async (req, res) => {
   try {
     // Data is already validated by Zod middleware
     const { email, password } = req.body;
+
+    // Check if JWT_SECRET is configured
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not configured in environment variables');
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'SERVER_MISCONFIGURATION',
+          message: 'Server configuration error'
+        }
+      });
+    }
 
     // Check if user exists
     const user = await User.findOne({ email });
@@ -121,11 +155,7 @@ const login = async (req, res) => {
       });
     }
 
-    // Update last login
-    user.lastLoginAt = new Date();
-    await user.save();
-
-    // Create JWT token
+    // Create JWT token payload
     const payload = {
       user: {
         id: user.id,
@@ -133,26 +163,39 @@ const login = async (req, res) => {
       }
     };
 
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '5 days' },
-      (err, token) => {
-        if (err) throw err;
-        res.json({
-          success: true,
-          data: {
-            token,
-            user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role
-            }
+    // Generate JWT token
+    const token = await new Promise((resolve, reject) => {
+      jwt.sign(
+        payload,
+        process.env.JWT_SECRET,
+        { expiresIn: '5 days' },
+        (err, token) => {
+          if (err) {
+            console.error('JWT generation error:', err);
+            reject(err);
+          } else {
+            resolve(token);
           }
-        });
+        }
+      );
+    });
+
+    // Update last login only after successful token generation
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
       }
-    );
+    });
 
   } catch (error) {
     console.error('Login error:', error);
@@ -172,6 +215,7 @@ const login = async (req, res) => {
 const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
+    console.log("user",user);
     
     if (!user) {
       return res.status(404).json({
